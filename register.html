@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register — Thrift & Thread</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <div class="logo">
+        <a href="index.html">THRIFT<span class="logo-accent">&</span>THREAD</a>
+      </div>
+      <nav class="nav">
+        <a href="index.html">Home</a>
+        <a href="index.html#shop">Shop</a>
+        <a href="index.html#about">About</a>
+        <a href="index.html#contact">Contact</a>
+        <a href="login.html">Login</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Register Form -->
+  <section class="auth-section">
+    <div class="container">
+      <div class="auth-card">
+        <h1>Create Your Account</h1>
+        <form id="registerForm">
+          <div class="form-group">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" required />
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" required />
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" required />
+          </div>
+          <button type="submit" class="btn btn-primary">Register</button>
+        </form>
+        <p>Already have an account? <a href="login.html">Login here</a></p>
+        <div id="message"></div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const message = document.getElementById('message');
+
+      try {
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password })
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+          message.innerHTML = '<p style="color: green;">Registration successful! You can now login.</p>';
+          setTimeout(() => window.location.href = 'login.html', 2000);
+        } else {
+          message.innerHTML = `<p style="color: red;">${data.error}</p>`;
+        }
+      } catch (error) {
+        message.innerHTML = '<p style="color: red;">Error registering. Try again.</p>';
+      }
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — Thrift & Thread</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <div class="login-logo">T<span>&</span>T</div>
+      <h1>Admin Panel</h1>
+      <p>Sign in to manage your store</p>
+      <form id="loginForm" novalidate>
+        <div class="login-field">
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="Enter admin password" autocomplete="current-password" />
+        </div>
+        <div class="login-error" id="loginError">Incorrect password. Try again.</div>
+        <button type="submit" class="login-btn">Sign In →</button>
+      </form>
+      <p class="login-hint">Default password: <code>admin123</code></p>
+    </div>
+  </div>
+
+  <!-- ADMIN APP -->
+  <div id="adminApp" class="admin-app hidden">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <span>T<em>&</em>T</span>
+        <span class="sidebar-label">Admin</span>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-view="dashboard">
+          <span class="nav-icon">📊</span><span>Dashboard</span>
+        </button>
+        <button class="nav-item" data-view="products">
+          <span class="nav-icon">🛍️</span><span>Products</span>
+        </button>
+        <button class="nav-item" data-view="add-product">
+          <span class="nav-icon">➕</span><span>Add Product</span>
+        </button>
+        <button class="nav-item" data-view="orders">
+          <span class="nav-icon">📦</span><span>Orders</span>
+        </button>
+        <button class="nav-item" data-view="settings">
+          <span class="nav-icon">⚙️</span><span>Settings</span>
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="index.html" target="_blank" class="view-store-btn">View Store ↗</a>
+        <button class="logout-btn" id="logoutBtn">Sign Out</button>
+      </div>
+    </aside>
+
+    <!-- Mobile top bar -->
+    <div class="mobile-topbar">
+      <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+      <span class="mobile-logo">T<em>&</em>T Admin</span>
+      <button class="logout-btn-sm" id="logoutBtnSm">↩</button>
+    </div>
+
+    <!-- Main Content -->
+    <main class="admin-main" id="adminMain">
+
+      <!-- ===== DASHBOARD ===== -->
+      <div class="view active" id="view-dashboard">
+        <div class="view-header">
+          <div>
+            <h2>Dashboard</h2>
+            <p>Welcome back! Here's what's happening.</p>
+          </div>
+          <div class="header-date" id="headerDate"></div>
+        </div>
+
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <div class="dash-grid">
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h3>Recent Products</h3>
+              <button class="text-btn" onclick="switchView('products')">View All →</button>
+            </div>
+            <div id="recentProductsList"></div>
+          </div>
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h3>Quick Actions</h3>
+            </div>
+            <div class="quick-actions">
+              <button class="qa-btn" onclick="switchView('add-product')">
+                <span>➕</span><span>Add New Product</span>
+              </button>
+              <button class="qa-btn" onclick="switchView('products')">
+                <span>✏️</span><span>Edit Products</span>
+              </button>
+              <button class="qa-btn" onclick="exportProducts()">
+                <span>📤</span><span>Export Products</span>
+              </button>
+              <button class="qa-btn" onclick="switchView('settings')">
+                <span>⚙️</span><span>Store Settings</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-card" style="margin-top:1.5rem">
+          <div class="dash-card-header">
+            <h3>Category Breakdown</h3>
+          </div>
+          <div class="category-bars" id="categoryBars"></div>
+        </div>
+      </div>
+
+      <!-- ===== PRODUCTS LIST ===== -->
+      <div class="view" id="view-products">
+        <div class="view-header">
+          <div>
+            <h2>Products</h2>
+            <p id="productCountLabel">Loading...</p>
+          </div>
+          <div class="header-actions">
+            <input type="text" class="search-input" id="productSearch" placeholder="🔍 Search products..." />
+            <button class="btn-primary" onclick="switchView('add-product')">+ Add Product</button>
+          </div>
+        </div>
+
+        <div class="filter-tabs" id="productFilterTabs">
+          <button class="tab active" data-cat="all">All</button>
+          <button class="tab" data-cat="thrift">Thrift Fashion</button>
+          <button class="tab" data-cat="keychains">Keychains</button>
+        </div>
+
+        <div class="products-table-wrap">
+          <table class="products-table" id="productsTable">
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Badge</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="productsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== ADD / EDIT PRODUCT ===== -->
+      <div class="view" id="view-add-product">
+        <div class="view-header">
+          <div>
+            <h2 id="formTitle">Add New Product</h2>
+            <p id="formSubtitle">Fill in the details below</p>
+          </div>
+          <button class="btn-ghost" onclick="switchView('products')">← Back to Products</button>
+        </div>
+
+        <form id="productForm" novalidate>
+          <input type="hidden" id="editProductId" value="" />
+
+          <div class="form-grid">
+            <!-- Left Column -->
+            <div class="form-col">
+
+              <!-- Image Upload -->
+              <div class="form-section">
+                <h3 class="form-section-title">Product Image</h3>
+                <div class="image-upload-area" id="imageUploadArea">
+                  <div class="upload-placeholder" id="uploadPlaceholder">
+                    <span class="upload-icon">📷</span>
+                    <p>Click to upload or drag & drop</p>
+                    <span class="upload-hint">JPG, PNG, WEBP up to 5MB</span>
+                  </div>
+                  <img id="imagePreview" class="image-preview hidden" alt="Product preview" />
+                  <input type="file" id="imageInput" accept="image/*" class="file-input" />
+                </div>
+                <div class="image-actions hidden" id="imageActions">
+                  <button type="button" class="btn-ghost btn-sm" onclick="clearImage()">✕ Remove Image</button>
+                </div>
+                <div class="form-divider"><span>or use an emoji placeholder</span></div>
+                <div class="emoji-row">
+                  <label class="field-label">Emoji</label>
+                  <div class="emoji-picker" id="emojiPicker"></div>
+                  <input type="text" id="fieldEmoji" class="field-input emoji-input" placeholder="🧥" maxlength="2" />
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Background Color</label>
+                  <div class="bg-presets" id="bgPresets"></div>
+                  <input type="text" id="fieldBg" class="field-input" placeholder="linear-gradient(135deg,#fce4ec,#f8bbd0)" />
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Right Column -->
+            <div class="form-col">
+
+              <div class="form-section">
+                <h3 class="form-section-title">Basic Info</h3>
+
+                <div class="field-group">
+                  <label class="field-label">Product Name <span class="required">*</span></label>
+                  <input type="text" id="fieldName" class="field-input" placeholder="e.g. Vintage Levi's Denim Jacket" required />
+                </div>
+
+                <div class="field-row">
+                  <div class="field-group">
+                    <label class="field-label">Category <span class="required">*</span></label>
+                    <select id="fieldCategory" class="field-input field-select" required>
+                      <option value="">Select category</option>
+                      <option value="thrift">Thrift Fashion</option>
+                      <option value="keychains">Keychains</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">Badge</label>
+                    <select id="fieldBadge" class="field-input field-select">
+                      <option value="">None</option>
+                      <option value="New">New</option>
+                      <option value="Sale">Sale</option>
+                      <option value="Handmade">Handmade</option>
+                      <option value="Custom">Custom</option>
+                      <option value="Fan Fave">Fan Fave</option>
+                      <option value="Rare">Rare</option>
+                      <option value="Set of 3">Set of 3</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="field-group">
+                  <label class="field-label">Description <span class="required">*</span></label>
+                  <textarea id="fieldDesc" class="field-input field-textarea" placeholder="Describe the product..." rows="4" required></textarea>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <h3 class="form-section-title">Pricing & Stock</h3>
+                <div class="field-row">
+                  <div class="field-group">
+                  <label class="field-label">Price (₹) <span class="required">*</span></label>
+                  <input type="number" id="fieldPrice" class="field-input" placeholder="0.00" min="0" step="0.01" required />
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Original Price (₹) <span class="hint">for sale items</span></label>
+                    <input type="number" id="fieldOldPrice" class="field-input" placeholder="0.00" min="0" step="0.01" />
+                  </div>
+                </div>
+                <div class="field-row">
+                  <div class="field-group">
+                    <label class="field-label">Rating (0–5)</label>
+                    <input type="number" id="fieldRating" class="field-input" placeholder="4.9" min="0" max="5" step="0.1" value="4.9" />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">Review Count</label>
+                    <input type="number" id="fieldReviews" class="field-input" placeholder="0" min="0" value="0" />
+                  </div>
+                </div>
+                <div class="field-row checkboxes">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="fieldInStock" checked />
+                    <span class="checkbox-custom"></span>
+                    In Stock
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="fieldIsNew" />
+                    <span class="checkbox-custom"></span>
+                    New Arrival
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="fieldCustomizable" />
+                    <span class="checkbox-custom"></span>
+                    Customizable
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-section" id="sizesSection">
+                <h3 class="form-section-title">Sizes <span class="hint">(for fashion items)</span></h3>
+                <div class="tag-input-wrap">
+                  <div class="tag-list" id="sizeTagList"></div>
+                  <div class="tag-add-row">
+                    <div class="size-presets">
+                      <button type="button" class="preset-tag" onclick="addTag('sizes','XS')">XS</button>
+                      <button type="button" class="preset-tag" onclick="addTag('sizes','S')">S</button>
+                      <button type="button" class="preset-tag" onclick="addTag('sizes','M')">M</button>
+                      <button type="button" class="preset-tag" onclick="addTag('sizes','L')">L</button>
+                      <button type="button" class="preset-tag" onclick="addTag('sizes','XL')">XL</button>
+                      <button type="button" class="preset-tag" onclick="addTag('sizes','XXL')">XXL</button>
+                    </div>
+                    <div class="tag-custom-add">
+                      <input type="text" id="sizeInput" class="field-input tag-input" placeholder="Custom size..." />
+                      <button type="button" class="btn-add-tag" onclick="addTagFromInput('sizes','sizeInput')">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <h3 class="form-section-title">Colors / Variants <span class="hint">(for keychains)</span></h3>
+                <div class="tag-input-wrap">
+                  <div class="tag-list" id="colorTagList"></div>
+                  <div class="tag-add-row">
+                    <div class="size-presets">
+                      <button type="button" class="preset-tag" onclick="addTag('colors','Pink')">Pink</button>
+                      <button type="button" class="preset-tag" onclick="addTag('colors','Lavender')">Lavender</button>
+                      <button type="button" class="preset-tag" onclick="addTag('colors','Mint')">Mint</button>
+                      <button type="button" class="preset-tag" onclick="addTag('colors','Gold')">Gold</button>
+                      <button type="button" class="preset-tag" onclick="addTag('colors','Clear')">Clear</button>
+                    </div>
+                    <div class="tag-custom-add">
+                      <input type="text" id="colorInput" class="field-input tag-input" placeholder="Custom color..." />
+                      <button type="button" class="btn-add-tag" onclick="addTagFromInput('colors','colorInput')">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-ghost" onclick="resetForm()">Reset</button>
+            <button type="submit" class="btn-primary" id="submitBtn">
+              <span id="submitBtnText">Save Product</span>
+            </button>
+          </div>
+
+          <div class="form-error" id="formError"></div>
+        </form>
+      </div>
+
+      <!-- ===== ORDERS (mock) ===== -->
+      <div class="view" id="view-orders">
+        <div class="view-header">
+          <div><h2>Orders</h2><p>Recent customer orders</p></div>
+        </div>
+        <div class="orders-list" id="ordersList"></div>
+      </div>
+
+      <!-- ===== SETTINGS ===== -->
+      <div class="view" id="view-settings">
+        <div class="view-header">
+          <div><h2>Settings</h2><p>Manage your store configuration</p></div>
+        </div>
+        <div class="settings-grid">
+          <div class="settings-card">
+            <h3>Change Password</h3>
+            <form id="passwordForm">
+              <div class="field-group">
+                <label class="field-label">Current Password</label>
+                <input type="password" id="currentPwd" class="field-input" placeholder="Current password" />
+              </div>
+              <div class="field-group">
+                <label class="field-label">New Password</label>
+                <input type="password" id="newPwd" class="field-input" placeholder="New password" />
+              </div>
+              <div class="field-group">
+                <label class="field-label">Confirm New Password</label>
+                <input type="password" id="confirmPwd" class="field-input" placeholder="Confirm new password" />
+              </div>
+              <button type="submit" class="btn-primary">Update Password</button>
+              <div class="settings-msg" id="pwdMsg"></div>
+            </form>
+          </div>
+          <div class="settings-card">
+            <h3>Data Management</h3>
+            <p style="color:var(--gray);font-size:0.9rem;margin-bottom:1.5rem">Export or reset your product catalog.</p>
+            <div style="display:flex;flex-direction:column;gap:0.75rem">
+              <button class="btn-primary" onclick="exportProducts()">📤 Export Products (JSON)</button>
+              <button class="btn-outline" onclick="importProducts()">📥 Import Products (JSON)</button>
+              <input type="file" id="importInput" accept=".json" class="file-input" />
+              <button class="btn-danger" onclick="confirmReset()">🗑️ Reset to Default Products</button>
+            </div>
+          </div>
+          <div class="settings-card">
+            <h3>Store Info</h3>
+            <div class="field-group">
+              <label class="field-label">Store Name</label>
+              <input type="text" id="storeName" class="field-input" value="Thrift & Thread" />
+            </div>
+            <div class="field-group">
+              <label class="field-label">Store Tagline</label>
+              <input type="text" id="storeTagline" class="field-input" value="Thrifted Treasures & Custom Keychains" />
+            </div>
+            <button class="btn-primary" onclick="saveStoreInfo()">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Toast -->
+  <div class="admin-toast" id="adminToast"></div>
+
+  <!-- Confirm Dialog -->
+  <div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-dialog">
+      <h3 id="confirmTitle">Are you sure?</h3>
+      <p id="confirmMsg"></p>
+      <div class="confirm-actions">
+        <button class="btn-ghost" id="confirmCancel">Cancel</button>
+        <button class="btn-danger" id="confirmOk">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
