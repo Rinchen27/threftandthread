@@ -10,6 +10,11 @@ const PORT = 3000;
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname)));
 
+// Serve index.html for root route
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // User data storage (simple JSON file)
 const usersFile = path.join(__dirname, 'users.json');
 
