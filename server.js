@@ -51,9 +51,7 @@ app.post('/api/login', (req, res) => {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 
-  res.json({ message: 'Login successful', user: { id: user.id, email: user.email, name: user.name } });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+// Export the app for Vercel
+module.exports = app;
